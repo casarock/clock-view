@@ -6,14 +6,16 @@ import XCPlayground
 class ClockView: UIView {
     
     var shapeLayer: CAShapeLayer
+    var countDownTimer = NSTimer()
+    var timerValue = 900
+    var label = UILabel()
     
     override init (frame : CGRect) {
-        shapeLayer = CAShapeLayer()
+        self.shapeLayer = CAShapeLayer()
+        
         super.init(frame : frame)
-    }
-    
-    convenience init () {
-        self.init(frame:CGRect.zero)
+        
+        self.createLabel()
     }
     
     required init(coder aDecoder: NSCoder) {
@@ -23,47 +25,78 @@ class ClockView: UIView {
     func addCircle() {
         let circlePath = UIBezierPath(arcCenter: CGPoint(x: 160,y: 240), radius: CGFloat(100), startAngle: CGFloat(-M_PI_2), endAngle:CGFloat(2*M_PI-M_PI_2), clockwise: true)
         
-        shapeLayer.path = circlePath.CGPath
-        shapeLayer.fillColor = UIColor.clearColor().CGColor
-        shapeLayer.strokeColor = UIColor.redColor().CGColor
-        shapeLayer.lineWidth = 1.0
+        self.shapeLayer.path = circlePath.CGPath
+        self.shapeLayer.fillColor = UIColor.clearColor().CGColor
+        self.shapeLayer.strokeColor = UIColor.redColor().CGColor
+        self.shapeLayer.lineWidth = 1.0
         
-        self.layer.addSublayer(shapeLayer)
+        self.layer.addSublayer(self.shapeLayer)
     }
     
-    func setLabelText(labelText: String) {
-        let label = UILabel(frame: CGRect(x: 72, y: 220, width: 200, height: 40))
+    func createLabel() {
+        self.label = UILabel(frame: CGRect(x: 72, y: 220, width: 200, height: 40))
         
-        label.font = UIFont(name: label.font.fontName, size: 40)
-        label.text = labelText
-        label.textColor = UIColor.redColor()
+        self.label.font = UIFont(name: self.label.font.fontName, size: 40)
+        self.label.textColor = UIColor.redColor()
         
-        self.addSubview(label)
+        self.addSubview(self.label)
     }
     
     func startAnimation() {
         let animation = CABasicAnimation(keyPath: "strokeEnd")
         animation.fromValue = 0
         animation.toValue = 1
-        animation.duration = 10
+        animation.duration = Double(self.timerValue)
         animation.fillMode = kCAFillModeForwards
         animation.removedOnCompletion = false
         
-        shapeLayer.addAnimation(animation, forKey: "ani")
+        self.shapeLayer.addAnimation(animation, forKey: "ani")
     }
     
-    func setTimer(timerValue: Int) {
-        let str = String(format:"%02d:%02d:%02d", (timerValue/6000)%100, (timerValue/100)%60, timerValue%100)
+    func setTimer(value: Int) {
+        self.timerValue = value
+        self.updateLabel(value)
+    }
+    
+    func startClockTimer() {
+        //self.countDownTimer.invalidate()
+        self.countDownTimer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: Selector("countdown:"), userInfo: nil, repeats: true)
+        self.startAnimation()
+
+    }
+    
+    func countdown(dt: NSTimer) {
+        self.timerValue--
+        if self.timerValue < 0 {
+            self.countDownTimer.invalidate()
+        }
+        else {
+            self.setLabelText(self.timeFormatted(self.timerValue))
+        }
+    }
+    
+    private func updateLabel(value: Int) {
+        self.setLabelText(self.timeFormatted(value))
         self.addCircle()
-        self.setLabelText(str)
+    }
+    
+    private func setLabelText(value: String) {
+        self.label.text = value
+    }
+    
+    private func timeFormatted(totalSeconds: Int) -> String {
+        let seconds: Int = totalSeconds % 60
+        let minutes: Int = (totalSeconds / 60) % 60
+        let hours: Int = totalSeconds / 3600
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
 }
 
 let view = ClockView()
 view.backgroundColor = UIColor.whiteColor()
-view.frame = CGRect(x:0, y: 0, width: 320, height: 480)
+view.frame = CGRect(x: 0, y: 0, width: 320, height: 480)
 
-view.setTimer(900)
-view.startAnimation()
+view.setTimer(10)
+view.startClockTimer()
 
 XCPlaygroundPage.currentPage.liveView = view
