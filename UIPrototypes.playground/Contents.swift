@@ -5,14 +5,12 @@ import XCPlayground
 
 class ClockView: UIView {
     
-    var shapeLayer: CAShapeLayer
-    var countDownTimer = NSTimer()
-    var timerValue = 900
-    var label = UILabel()
+    private var shapeLayer = CAShapeLayer()
+    private var countDownTimer = NSTimer()
+    private var timerValue = 900
+    private var label = UILabel()
     
     override init (frame : CGRect) {
-        self.shapeLayer = CAShapeLayer()
-        
         super.init(frame : frame)
         
         self.createLabel()
@@ -22,7 +20,7 @@ class ClockView: UIView {
         fatalError("This class does not support NSCoding")
     }
     
-    func addCircle() {
+    private func addCircle() {
         let circlePath = UIBezierPath(arcCenter: CGPoint(x: 160,y: 240), radius: CGFloat(100), startAngle: CGFloat(-M_PI_2), endAngle:CGFloat(2*M_PI-M_PI_2), clockwise: true)
         
         self.shapeLayer.path = circlePath.CGPath
@@ -33,7 +31,7 @@ class ClockView: UIView {
         self.layer.addSublayer(self.shapeLayer)
     }
     
-    func createLabel() {
+    private func createLabel() {
         self.label = UILabel(frame: CGRect(x: 72, y: 220, width: 200, height: 40))
         
         self.label.font = UIFont(name: self.label.font.fontName, size: 40)
@@ -42,7 +40,7 @@ class ClockView: UIView {
         self.addSubview(self.label)
     }
     
-    func startAnimation() {
+    private func startAnimation() {
         let animation = CABasicAnimation(keyPath: "strokeEnd")
         animation.fromValue = 0
         animation.toValue = 1
@@ -51,28 +49,6 @@ class ClockView: UIView {
         animation.removedOnCompletion = false
         
         self.shapeLayer.addAnimation(animation, forKey: "ani")
-    }
-    
-    func setTimer(value: Int) {
-        self.timerValue = value
-        self.updateLabel(value)
-    }
-    
-    func startClockTimer() {
-        //self.countDownTimer.invalidate()
-        self.countDownTimer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: Selector("countdown:"), userInfo: nil, repeats: true)
-        self.startAnimation()
-
-    }
-    
-    func countdown(dt: NSTimer) {
-        self.timerValue--
-        if self.timerValue < 0 {
-            self.countDownTimer.invalidate()
-        }
-        else {
-            self.setLabelText(self.timeFormatted(self.timerValue))
-        }
     }
     
     private func updateLabel(value: Int) {
@@ -90,6 +66,30 @@ class ClockView: UIView {
         let hours: Int = totalSeconds / 3600
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
+    
+    // Needs @objc to be able to call private function in NSTimer.
+    @objc private func countdown(dt: NSTimer) {
+        self.timerValue--
+        if self.timerValue < 0 {
+            self.countDownTimer.invalidate()
+        }
+        else {
+            self.setLabelText(self.timeFormatted(self.timerValue))
+        }
+    }
+    
+    func setTimer(value: Int) {
+        self.timerValue = value
+        self.updateLabel(value)
+    }
+    
+    func startClockTimer() {
+        //self.countDownTimer.invalidate()
+        self.countDownTimer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: Selector("countdown:"), userInfo: nil, repeats: true)
+        self.startAnimation()
+        
+    }
+    
 }
 
 let view = ClockView()
